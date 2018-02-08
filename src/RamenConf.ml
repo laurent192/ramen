@@ -375,7 +375,7 @@ let parse_operation operation =
   let p = Lang.(opt_blanks -+ Operation.Parser.p +- opt_blanks +- eof) in
   (* TODO: enable error correction *)
   let stream = stream_of_string operation in
-  match p ["operation"] None Parsers.no_error_correction stream |>
+  match p ["operation"] None Parsers.no_correction stream |>
         to_result with
   | Bad e ->
     let error =
@@ -390,14 +390,21 @@ let parse_program program =
   let open RamenParsing in
   let p = Lang.(opt_blanks -+ Program.Parser.p +- opt_blanks +- eof) in
   let stream = stream_of_string program in
-  (* TODO: enable error correction *)
-  match p ["program"] None Parsers.no_error_correction stream |>
-        to_result with
+  let parse_with_err_budget e =
+    let c = ParsersBoundedSet.make e in
+    p ["program"] None c stream |> to_result in
+  match parse_with_err_budget 0 with
   | Bad e ->
-    let error =
-      IO.to_string (print_bad_result Lang.Program.print) e in
-    let open Lang in
-    raise (SyntaxError (ParseError { error ; text = program }))
+    let error = IO.to_string (print_bad_result Lang.Program.print) e in
+    (* Try again with some error correction activated, in order to get a
+     * better error message: *)
+    !logger.info "Parse once more..." ;
+    (match parse_with_err_budget 1 with
+    | Bad e ->
+      let error = "BEFORE: "^ error ^"\nAFTER: "^ IO.to_string (print_bad_result Lang.Program.print) e in
+      let open Lang in
+      raise (SyntaxError (ParseError { error ; text = program }))
+    | _ -> assert false)
   | Ok (funcs, _) ->
     Lang.Program.check funcs ;
     funcs

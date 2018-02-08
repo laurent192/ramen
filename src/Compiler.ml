@@ -977,7 +977,7 @@ let set_all_types parents program =
       let open RamenParsing in
       let p = Lang.Expr.Parser.(p +- eof) in
       let exp =
-        match p [] None Parsers.no_error_correction (stream_of_string expr_text) |>
+        match p [] None Parsers.no_correction (stream_of_string expr_text) |>
               to_result with
         | Batteries.Bad e ->
           let err =

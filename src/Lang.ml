@@ -210,7 +210,7 @@ let tuple_need_state = function
     | Bad x -> Bad x
 
   let test_p p s =
-    (p +- eof) [] None Parsers.no_error_correction (PConfig.stream_of_string s) |>
+    (p +- eof) [] None Parsers.no_correction (PConfig.stream_of_string s) |>
     to_result |>
     strip_linecol
 
@@ -1218,8 +1218,8 @@ struct
 
       (Bad (\
         NoSolution (\
-          Some { where = ParsersMisc.Item ((0,7), '.');\
-                 what=["eof"]})))\
+          Some { where = ParsersMisc.Item ((0,7), '.') ; msg = "garbage at EOF" ;\
+                 stack = ["eof"] ; corrs = Parsers.no_correction })))\
         (test_p field "pasglop.bytes" |> replace_typ_in_expr)
 
       (Ok (\
@@ -1229,8 +1229,8 @@ struct
 
       (Bad (\
         NoSolution (\
-          Some { where = ParsersMisc.Item ((0,7), 'c') ;\
-                 what = ["\"#successive\"";"field"]})))\
+          Some { where = ParsersMisc.Item ((0,7), 'c') ; msg = "garbage at EOF" ;\
+                 stack = ["\"#successive\"";"field"] ; corrs = Parsers.no_correction })))\
         (test_p field "first.#count" |> replace_typ_in_expr)
     *)
 
@@ -1246,8 +1246,8 @@ struct
 
       (Bad (\
         NoSolution (\
-          Some { where = ParsersMisc.Item ((0,0), 'g');\
-                 what = ["\"$\""; "param"] })))\
+          Some { where = ParsersMisc.Item ((0,0), 'g') ; msg = "failure" ;\
+                 stack = ["\"$\""; "param"] ; corrs = Parsers.no_correction })))\
       (test_p param "glop" |> replace_typ_in_expr)
     *)
 
